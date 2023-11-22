@@ -7,8 +7,11 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 
+import lwjgl.test.renderer.Shader;
+
 public class LevelEditorScene extends Scene {
-    private String vertexShaderSource = "#version 330 core\r\n" + //
+    // ? May not be needed
+    /* private String vertexShaderSource = "#version 330 core\r\n" + //
             "layout (location = 0) in vec3 aPos;\r\n" + //
             "layout (location = 1) in vec4 aColour;\r\n" + //
             "\r\n" + //
@@ -30,7 +33,7 @@ public class LevelEditorScene extends Scene {
             "    color = fColour;\r\n" + //
             "}";
 
-    private int vertexID, fragmentID, shaderProgram;
+    private int vertexID, fragmentID, shaderProgram; */
     private float[] vertexArray = {
         // Position             // Colour
         0.5f , -0.5f, 0.0f,     1.0f, 0.0f, 0.0f, 1.0f,      // Bottom Right 0
@@ -39,13 +42,14 @@ public class LevelEditorScene extends Scene {
         -0.5f, -0.5f, 0.0f,     1.0f, 1.0f, 0.0f, 1.0f,      // Bottom Left  3
     };
 
-    //! IMPORTANT: MUST BE IN COUNTER-CLOCKWISE ORDER
+    // ! IMPORTANT: MUST BE IN COUNTER-CLOCKWISE ORDER
     private int[] elementArray = {
         2, 1, 0, // Top Right Triangle
         0, 1, 3, // Bottom Left Triangle
     };
 
     private int vaoID, vboID, eboID;
+    private Shader defaultShader;
 
     public LevelEditorScene() {
         System.out.println("Inside Level Editor Scene");
@@ -53,55 +57,8 @@ public class LevelEditorScene extends Scene {
 
     @Override
     public void init() {
-        // ===============================================================
-        // Compile and link shaders
-        // ===============================================================
-        
-        // First load and compile vertex shader
-        vertexID = GL20.glCreateShader(GL20.GL_VERTEX_SHADER);
-        // Pass source to GPU
-        GL20.glShaderSource(vertexID, vertexShaderSource);
-        GL20.glCompileShader(vertexID);
-
-        // Check for errors
-        int success = GL20.glGetShaderi(vertexID, GL20.GL_COMPILE);
-        if (success == GL20.GL_FALSE) {
-            int len = GL20.glGetShaderi(vertexID, GL20.GL_INFO_LOG_LENGTH);
-            System.out.println("ERROR: 'defaultShader.glsl'\n\tVertex shader compilation failed.");
-            System.out.println(GL20.glGetShaderInfoLog(vertexID, len));
-            assert false : "";
-        }
-
-
-        // First load and compile fragment shader
-        fragmentID = GL20.glCreateShader(GL20.GL_FRAGMENT_SHADER);
-        // Pass source to GPU
-        GL20.glShaderSource(fragmentID, fragmentShaderSource);
-        GL20.glCompileShader(fragmentID);
-
-        // Check for errors
-        success = GL20.glGetShaderi(fragmentID, GL20.GL_COMPILE);
-        if (success == GL20.GL_FALSE) {
-            int len = GL20.glGetShaderi(fragmentID, GL20.GL_INFO_LOG_LENGTH);
-            System.out.println("ERROR: 'defaultShader.glsl'\n\tFragment shader compilation failed.");
-            System.out.println(GL20.glGetShaderInfoLog(fragmentID, len));
-            assert false : "";
-        }
-
-        // Link shaders and check for errors
-        shaderProgram = GL20.glCreateProgram();
-        GL20.glAttachShader(shaderProgram, vertexID);
-        GL20.glAttachShader(shaderProgram, fragmentID);
-        GL20.glLinkProgram(shaderProgram);
-
-        // Check for linking errors
-        success = GL20.glGetProgrami(shaderProgram, GL20.GL_LINK_STATUS);
-        if (success == GL20.GL_FALSE) {
-            int len = GL20.glGetProgrami(shaderProgram, GL20.GL_INFO_LOG_LENGTH);
-            System.out.println("ERROR: 'defaultShader.glsl'\n\tShader linking failed.");
-            System.out.println(GL20.glGetProgramInfoLog(shaderProgram, len));
-            assert false : "";
-        }
+        defaultShader = new Shader("assets/shaders/default.glsl");
+        defaultShader.compile();
 
         // ===============================================================
         // Generate VAO, BVO, and EBO buffer objects, and send to GPU
@@ -140,8 +97,8 @@ public class LevelEditorScene extends Scene {
 
     @Override
     public void update(float dt) {
-        // Bind shader
-        GL20.glUseProgram(shaderProgram);
+        defaultShader.use();
+
         // Bind VAO
         GL30.glBindVertexArray(vaoID);
         
@@ -156,6 +113,6 @@ public class LevelEditorScene extends Scene {
         GL20.glDisableVertexAttribArray(1);
 
         GL30.glBindVertexArray(0);
-        GL20.glUseProgram(0);
+        defaultShader.detatch();
     }
 }
